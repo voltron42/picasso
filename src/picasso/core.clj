@@ -12,18 +12,13 @@
                                                             :height  [JPEGTranscoder/KEY_HEIGHT float]
                                                             :width   [JPEGTranscoder/KEY_WIDTH float]}]})
 
-(defn rasterize [type opts svg ^OutputStream out]
+(defn rasterize [type opts ^InputStream input ^OutputStream out]
   (if (contains? types type)
-    (let [^InputStream input (->> svg
-                                  (xml/emit-element)
-                                  (with-out-str)
-                                  (.getBytes)
-                                  (ByteArrayInputStream.))
-          [transcoder default-opts hints-map] (types type)]
+    (let [[transcoder default-opts hints-map] (types type)]
       (doseq [[option value] (merge default-opts opts)]
         (when-let [[opt-key coerce] (-> option keyword hints-map)]
           (.addTranscodingHint transcoder opt-key (coerce value))))
       (.transcode transcoder
                   (TranscoderInput. input)
                   (TranscoderOutput. out)))
-    (throw (IllegalArgumentException. (format "'%s' is not a valid type." type)))))
+    (throw (IllegalArgumentException. (str "'" type "' is not a valid type.")))))
